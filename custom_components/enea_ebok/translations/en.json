@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Enea eBOK",
+        "description": "Sign in with your ebok.enea.pl account.",
+        "data": {
+          "email": "E-mail",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid e-mail or password.",
+      "cannot_connect": "Failed to connect to Enea eBOK."
+    },
+    "abort": {
+      "already_configured": "This Enea account is already configured."
+    }
+  }
+}

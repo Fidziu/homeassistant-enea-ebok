@@ -1,0 +1,12 @@
+{
+  "domain": "enea_ebok",
+  "name": "Enea eBOK",
+  "version": "0.1.0",
+  "documentation": "https://github.com/Fidziu/homeassistant-enea-ebok",
+  "issue_tracker": "https://github.com/Fidziu/homeassistant-enea-ebok/issues",
+  "codeowners": ["@Fidziu"],
+  "requirements": [],
+  "after_dependencies": ["recorder"],
+  "iot_class": "cloud_polling",
+  "config_flow": true
+}
