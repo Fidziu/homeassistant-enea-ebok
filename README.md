@@ -53,6 +53,6 @@ Then add the statistics to any chart (e.g. a `statistics-graph` card with
 - eBOK is a session-cookie web app (no official API); this is a community reverse
   of the meter endpoints. Use at your own risk; respect Enea's terms.
 - Data is delayed ~1–2 days — this is historical verification, not real-time.
-- Tested with an ASIN-AQUA-style bidirectional meter on a prosumer contract.
+- Tested with a bidirectional (two-way) electricity meter on a prosumer (PV) contract.
 
 See **[CHANGELOG.md](CHANGELOG.md)**.

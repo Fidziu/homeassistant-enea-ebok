@@ -20,7 +20,7 @@ Initial release.
   `StatisticMeanType.NONE` in statistics metadata.
 
 ### Notes
-- Built/tested against a prosumer (PV + grid) contract on a bidirectional meter.
+- Built/tested against a prosumer (PV + grid) contract on a two-way electricity meter.
 - Companion setup (not part of the component): summed Deye grid import/export
   template sensors + an "Enea" dashboard overlaying Enea (przed bilansowaniem)
   against the inverters.
