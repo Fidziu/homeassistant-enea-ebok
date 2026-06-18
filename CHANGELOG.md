@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.0] — 2026-06-18
+
+### Added
+- Options flow (UI): configurable **refresh interval**, **backfill start date**,
+  **catch-up days** and per-day **throttle**.
+- **"Pull full history" button** — on-demand full backfill from `backfill_start`
+  (default `2023-05-01`, the earliest data eBOK exposes), throttled, with a full
+  statistics re-import (cumulative sums rebuilt from zero).
+- `reset` mode in the statistics importer for the historical re-import.
+
+### Changed
+- Default refresh interval 12 h → 6 h; backfill is date-based (from
+  `backfill_start`) instead of a fixed day count.
+- Integration reloads automatically when options change.
+
+### Notes
+- eBOK retains ~3 years of data; hourly resolution only via `duration=day`
+  (day-by-day). `duration=month`/`year` return daily/monthly aggregates.
+
 ## [0.1.0] — 2026-06-17
 
 Initial release.

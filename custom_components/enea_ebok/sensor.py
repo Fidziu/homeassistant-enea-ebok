@@ -81,7 +81,10 @@ class EneaStatSensor(_Base, SensorEntity):
     async def _import(self) -> None:
         data = self.coordinator.data or {}
         rows = (data.get("series") or {}).get(self._key, [])
-        total = await async_import_series(self.hass, self.entity_id, self._attr_name, rows)
+        reset = bool(data.get("full"))  # backfill -> full re-import from zero
+        total = await async_import_series(
+            self.hass, self.entity_id, self._attr_name, rows, reset=reset
+        )
         if total is not None:
             self._total = total
             self.async_write_ha_state()

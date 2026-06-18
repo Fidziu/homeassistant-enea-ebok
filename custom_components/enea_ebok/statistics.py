@@ -1,6 +1,6 @@
 """Inject Enea hourly meter data as recorder statistics for our own sensor
-entities (so cards like apexcharts-card, which require a real `entity`, can read
-them — external `domain:id` statistics are not usable there)."""
+entities (so cards like apexcharts-card / energy-custom-graph, which require a
+real `entity`, can read them)."""
 from __future__ import annotations
 
 import logging
@@ -34,14 +34,22 @@ async def async_last_sum(hass: HomeAssistant, statistic_id: str):
 
 
 async def async_import_series(
-    hass: HomeAssistant, statistic_id: str, name: str, rows: list[tuple]
+    hass: HomeAssistant, statistic_id: str, name: str, rows: list[tuple],
+    reset: bool = False,
 ) -> float | None:
     """rows: sorted list of (start_dt_aware_utc, hourly_kwh). Returns the final
-    cumulative sum (the sensor uses it as its state). statistic_id is an
-    entity_id -> recorder-source statistics."""
+    cumulative sum. statistic_id is an entity_id -> recorder-source statistics.
+
+    reset=False (default): append only the rows newer than the last stored point
+    (normal catch-up). reset=True: rebuild the whole series from zero, overwriting
+    existing statistics (full historical backfill — rows must be the COMPLETE,
+    chronologically sorted history)."""
     if not rows:
         return None
-    total, last_ts = await async_last_sum(hass, statistic_id)
+    if reset:
+        total, last_ts = 0.0, None
+    else:
+        total, last_ts = await async_last_sum(hass, statistic_id)
     data: list[StatisticData] = []
     for start_dt, value in rows:
         if last_ts is not None and start_dt.timestamp() <= last_ts:
@@ -59,5 +67,5 @@ async def async_import_series(
             unit_of_measurement="kWh",
         )
         async_import_statistics(hass, meta, data)
-        _LOGGER.debug("Enea: imported %d points into %s", len(data), statistic_id)
+        _LOGGER.debug("Enea: imported %d points into %s (reset=%s)", len(data), statistic_id, reset)
     return round(total, 3)
