@@ -1,5 +1,7 @@
 # Enea eBOK — Home Assistant integration
 
+<p align="center"><img src="logo.png" alt="Enea" width="220"></p>
+
 > **🏠 Works with the latest Home Assistant (tested on 2026.6+).**
 
 Custom Home Assistant integration for **Enea** (Polish electricity supplier).
@@ -17,16 +19,40 @@ from and given to the grid per hour.
 
 - Logs in to eBOK (CSRF token + `EBOK_SESSION` cookie).
 - Pulls `POST /meter/summaryBalancingChart` (XHR → JSON) for each day and imports
-  **4 external statistics** (kWh, hourly):
-  - `enea_ebok:grid_import` — pobrana, **przed** bilansowaniem (raw, for comparison)
-  - `enea_ebok:grid_export` — oddana, **przed** bilansowaniem
-  - `enea_ebok:grid_import_settled` — pobrana, **po** bilansowaniu (settlement)
-  - `enea_ebok:grid_export_settled` — oddana, **po** bilansowaniu
-- Exposes summary sensors: last data date, last full day's import / export.
-- Backfills ~30 days on first run, then re-pulls the last few days twice a day
-  (eBOK data lags ~1–2 days).
+  the 4 hourly values into **recorder statistics carried on real sensor entities**
+  (so any card — `statistics-graph`, etc. — can read them):
+  - `sensor.enea_ebok_enea_pobor_przed_bilansowaniem` — pobrana, **przed** bilansowaniem (raw)
+  - `sensor.enea_ebok_enea_oddanie_przed_bilansowaniem` — oddana, **przed** bilansowaniem
+  - `sensor.enea_ebok_enea_pobor_po_bilansowaniu` — pobrana, **po** bilansowaniu (settlement)
+  - `sensor.enea_ebok_enea_oddanie_po_bilansowaniu` — oddana, **po** bilansowaniu
+- Summary sensors: last data date, last full day's import / export.
+- Statistics are imported at the correct historical hour, so the entities
+  deliberately carry **no `state_class`** (the recorder must not auto-generate
+  stats from the 1–2 day-delayed live state).
 
-### Przed vs po bilansowaniu
+---
+
+## Options & backfill
+
+Configurable in *Settings → Devices & Services → Enea eBOK → **Configure***:
+
+- **Refresh interval** (hours) — how often to re-pull (default 6 h).
+- **Backfill start date** — how far back to fetch full history (default
+  `2023-05-01`, the earliest data eBOK exposes; it keeps ~3 years).
+- **Catch-up days** — how many recent days to re-pull on every refresh (eBOK lags
+  ~1–2 days).
+- **Throttle (ms)** — pause between days during a full backfill (anti-rate-limit).
+
+The **"Pull full history"** button fetches the entire history from the start date
+(throttled) and does a **full statistics re-import** (cumulative sums rebuilt from
+zero). Regular refreshes only re-pull the last few days (append).
+
+> Hourly resolution is only available day-by-day (`duration=day`). eBOK's
+> `month`/`year` bulk endpoints return daily/monthly aggregates, not hours.
+
+---
+
+## Przed vs po bilansowaniu
 Two different things, easy to confuse:
 - **Saldowanie międzyfazowe** (vector sum of phases) happens *continuously at the
   meter* — already baked into the raw per-hour import/export.
@@ -39,13 +65,16 @@ Two different things, easy to confuse:
 
 ## Install
 
-1. Copy `custom_components/enea_ebok` into your HA `config/custom_components/`.
+1. Copy `custom_components/enea_ebok` into your HA `config/custom_components/`
+   (or add this repo to HACS as a custom repository).
 2. Restart Home Assistant.
 3. *Settings → Devices & Services → Add Integration → "Enea eBOK"* → e-mail +
    password. The delivery point (PPE) is auto-discovered.
+4. Open *Configure* to set the refresh interval / backfill start, then press
+   **Pull full history** once to load the archive.
 
 Then add the statistics to any chart (e.g. a `statistics-graph` card with
-`stat_types: [change]`, `period: day`) to compare with your inverters.
+`stat_types: [change]`, `period: day`) to compare with your own measurements.
 
 ---
 
