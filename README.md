@@ -19,16 +19,20 @@ from and given to the grid per hour.
 
 - Logs in to eBOK (CSRF token + `EBOK_SESSION` cookie).
 - Pulls `POST /meter/summaryBalancingChart` (XHR → JSON) for each day and imports
-  the 4 hourly values into **recorder statistics carried on real sensor entities**
-  (so any card — `statistics-graph`, etc. — can read them):
-  - `sensor.enea_ebok_enea_pobor_przed_bilansowaniem` — pobrana, **przed** bilansowaniem (raw)
-  - `sensor.enea_ebok_enea_oddanie_przed_bilansowaniem` — oddana, **przed** bilansowaniem
-  - `sensor.enea_ebok_enea_pobor_po_bilansowaniu` — pobrana, **po** bilansowaniu (settlement)
-  - `sensor.enea_ebok_enea_oddanie_po_bilansowaniu` — oddana, **po** bilansowaniu
+  the 4 hourly values as **external long-term statistics** (read them by
+  `statistic_id` from any card — `statistics-graph`, the Energy dashboard,
+  `energy-custom-graph`, …):
+  - `enea_ebok:grid_import` — pobrana, **przed** bilansowaniem (raw)
+  - `enea_ebok:grid_export` — oddana, **przed** bilansowaniem
+  - `enea_ebok:grid_import_settled` — pobrana, **po** bilansowaniu (settlement)
+  - `enea_ebok:grid_export_settled` — oddana, **po** bilansowaniu
+- Statistics are imported at the correct historical hour (eBOK lags 1–2 days).
+  **External** statistics are decoupled from any entity's `state_class`, so the
+  recorder never auto-generates wrong "live" stats from the delayed value — and HA
+  never raises a `state_class` repair for them.
+- Companion sensor entities (`sensor.enea_ebok_enea_*`) show the latest cumulative
+  value of each series for quick display.
 - Summary sensors: last data date, last full day's import / export.
-- Statistics are imported at the correct historical hour, so the entities
-  deliberately carry **no `state_class`** (the recorder must not auto-generate
-  stats from the 1–2 day-delayed live state).
 
 ---
 
@@ -73,8 +77,9 @@ Two different things, easy to confuse:
 4. Open *Configure* to set the refresh interval / backfill start, then press
    **Pull full history** once to load the archive.
 
-Then add the statistics to any chart (e.g. a `statistics-graph` card with
-`stat_types: [change]`, `period: day`) to compare with your own measurements.
+Then add the statistics to any chart (e.g. a `statistics-graph` card listing the
+`enea_ebok:*` statistic ids with `stat_types: [change]`, `period: day`) to compare
+with your own measurements.
 
 ---
 

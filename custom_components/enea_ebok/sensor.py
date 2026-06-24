@@ -1,10 +1,11 @@
 """Enea sensors.
 
-`EneaStatSensor` are real entities whose recorder statistics are back-filled from
-eBOK (so apexcharts-card & friends, which need a real `entity`, can chart them).
-They deliberately have NO state_class so the recorder does not auto-generate
-statistics for the (1-2 day delayed) state — all statistics come from the import,
-placed at the correct historical hour."""
+`EneaStatSensor` show the latest cumulative value; the hourly history is stored
+as EXTERNAL statistics ("enea_ebok:<key>") — see statistics.py. External stats
+are decoupled from the entity's `state_class`, so HA raises no `state_class_removed`
+repair, while energy-custom-graph-card / the Energy dashboard read them by
+statistic_id. The entities deliberately have NO state_class (their state is
+1-2 days delayed; all history comes from the import at the correct historical hour)."""
 from __future__ import annotations
 
 from homeassistant.components.sensor import (
@@ -82,8 +83,11 @@ class EneaStatSensor(_Base, SensorEntity):
         data = self.coordinator.data or {}
         rows = (data.get("series") or {}).get(self._key, [])
         reset = bool(data.get("full"))  # backfill -> full re-import from zero
+        # External statistics id (decoupled from this entity's state_class, so
+        # no `state_class_removed` repair). Cards read "enea_ebok:<key>".
+        stat_id = f"{DOMAIN}:{self._key}"
         total = await async_import_series(
-            self.hass, self.entity_id, self._attr_name, rows, reset=reset
+            self.hass, stat_id, self._attr_name, rows, reset=reset
         )
         if total is not None:
             self._total = total

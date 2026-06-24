@@ -1,6 +1,10 @@
-"""Inject Enea hourly meter data as recorder statistics for our own sensor
-entities (so cards like apexcharts-card / energy-custom-graph, which require a
-real `entity`, can read them)."""
+"""Inject Enea hourly meter data as long-term statistics.
+
+We use EXTERNAL statistics (statistic_id "enea_ebok:<key>", source="enea_ebok")
+rather than recorder statistics under an entity_id. External statistics are
+decoupled from any entity's `state_class`, so HA never raises the
+`state_class_removed` repair — yet energy-custom-graph-card and the Energy
+dashboard read them by statistic_id exactly the same way."""
 from __future__ import annotations
 
 import logging
@@ -12,6 +16,7 @@ from homeassistant.components.recorder.models import (
     StatisticMetaData,
 )
 from homeassistant.components.recorder.statistics import (
+    async_add_external_statistics,
     async_import_statistics,
     get_last_statistics,
 )
@@ -38,7 +43,8 @@ async def async_import_series(
     reset: bool = False,
 ) -> float | None:
     """rows: sorted list of (start_dt_aware_utc, hourly_kwh). Returns the final
-    cumulative sum. statistic_id is an entity_id -> recorder-source statistics.
+    cumulative sum. statistic_id "enea_ebok:<key>" -> external statistics;
+    a bare entity_id -> legacy recorder statistics (kept for back-compat).
 
     reset=False (default): append only the rows newer than the last stored point
     (normal catch-up). reset=True: rebuild the whole series from zero, overwriting
@@ -57,15 +63,21 @@ async def async_import_series(
         total += float(value or 0.0)
         data.append(StatisticData(start=start_dt, sum=total))
     if data:
+        external = ":" in statistic_id
         meta = StatisticMetaData(
             mean_type=StatisticMeanType.NONE,
             has_mean=False,
             has_sum=True,
             name=name,
-            source="recorder",
+            # external stats: source must equal the statistic_id prefix
+            # ("enea_ebok"); legacy recorder stats (entity_id) keep "recorder".
+            source=statistic_id.split(":")[0] if external else "recorder",
             statistic_id=statistic_id,
             unit_of_measurement="kWh",
         )
-        async_import_statistics(hass, meta, data)
+        if external:
+            async_add_external_statistics(hass, meta, data)
+        else:
+            async_import_statistics(hass, meta, data)
         _LOGGER.debug("Enea: imported %d points into %s (reset=%s)", len(data), statistic_id, reset)
     return round(total, 3)

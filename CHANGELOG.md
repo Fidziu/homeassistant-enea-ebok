@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0] — 2026-06-24
+
+### Fixed
+- **Statistics back to external** (`enea_ebok:grid_import` / `:grid_export` /
+  `:grid_import_settled` / `:grid_export_settled`). 0.2.0 inadvertently switched to
+  recorder statistics carried on the sensor entities; because those entities
+  (correctly) have no `state_class`, Home Assistant raised a recurring
+  **"entity no longer has a state class" (`state_class_removed`) repair** on every
+  import. External statistics are decoupled from entity `state_class`, so the repair
+  is gone — while charts / the Energy dashboard still read the data by `statistic_id`.
+
+### Upgrading from 0.2.0
+- After updating, press **"Pull full history"** once — it rebuilds the external
+  statistics from eBOK.
+- The old per-entity statistics (`sensor.enea_ebok_enea_*`) left by 0.2.0 are now
+  redundant; remove them via *Developer Tools → Statistics* (the repair's **Delete**
+  button is safe **after** the backfill, since the data lives in `enea_ebok:*`).
+- Fresh installs and upgrades from 0.1.0 (already external) need no action.
+
 ## [0.2.0] — 2026-06-18
 
 ### Added
